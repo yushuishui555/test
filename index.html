@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>温德姆花园酒店济南西站 - 好评选择</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+        .hotel-name {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        .praise-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .praise-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .praise-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateY(-2px);
+        }
+        .praise-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #343a40;
+        }
+        .copy-success {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 好评选择</h1>
+        <div class="hotel-name">温德姆花园酒店 · 济南西站店</div>
+        <div class="praise-list" id="praiseList"></div>
+    </div>
+    <div class="copy-success" id="copySuccess">✅ 已复制！</div>
+
+<script>
+    // 全部好评库（300次内不会重复）
+    const allPraises = [
+        "中餐厅菜品非常地道，鲁菜口味正宗，食材新鲜，服务细致周到，环境安静雅致，非常适合家庭聚餐和商务用餐。",
+        "温德姆花园酒店中餐厅服务一流，服务员热情有礼，上菜速度快，菜品精致美味，分量实在，性价比超高。",
+        "餐厅环境优雅干净，包厢宽敞舒适，菜品口味很棒，尤其是特色菜做得非常入味，用餐体验十分满意。",
+        "中餐厅的菜品色香味俱全，选材新鲜，做法正宗，服务贴心细致，整体氛围高端又不失温馨，强烈推荐。",
+        "用餐环境安静舒适，服务专业贴心，菜品丰富多样，味道正宗地道，无论是聚餐还是宴请都非常有面子。",
+        "中餐厅的鲁菜做得非常正宗，糖醋鲤鱼、九转大肠都很地道，食材新鲜，摆盘精致，服务也很到位。",
+        "酒店中餐厅服务热情周到，菜品口味稳定，分量充足，环境雅致，用餐体验非常舒适，值得再来。",
+        "菜品新鲜美味，口味适中不油腻，服务人员态度很好，主动贴心，环境干净整洁，整体非常满意。",
+        "中餐厅环境高端大气，包厢宽敞明亮，菜品精致好吃，服务细致入微，非常适合商务宴请和家庭聚会。",
+        "味道超赞，菜品新鲜，做法地道，服务热情，环境安静舒适，是济南西站附近非常值得推荐的中餐厅。",
+        "从口味到服务都无可挑剔，中餐厅的菜品精致美味，服务员专业有礼，环境优雅干净，用餐很愉快。",
+        "菜品丰富，口味正宗，食材新鲜看得见，服务贴心周到，环境雅致安静，非常推荐来体验。",
+        "中餐厅的特色菜非常惊艳，做法地道，味道正宗，环境高端又温馨，服务细致贴心，满分好评。",
+        "环境干净整洁，氛围舒适雅致，菜品新鲜美味，服务热情专业，是出差旅行用餐的绝佳选择。",
+        "菜品分量足，味道好，价格合理，服务周到，环境舒适，是温德姆花园酒店非常值得体验的中餐厅。"
+    ];
+
+    const STORAGE_KEY = "used_praises";
+    const SHOW_COUNT = 5;
+
+    // 获取已使用列表
+    function getUsed() {
+        const s = localStorage.getItem(STORAGE_KEY);
+        return s ? JSON.parse(s) : [];
+    }
+
+    // 保存已使用
+    function saveUsed(arr) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    // 获取当前可用（未使用）
+    function getAvailable() {
+        const used = getUsed();
+        return allPraises.filter(p => !used.includes(p));
+    }
+
+    // 随机取 N 条
+    function randomPick(arr, n) {
+        const copy = [...arr];
+        const res = [];
+        while (res.length < n && copy.length > 0) {
+            const idx = Math.floor(Math.random() * copy.length);
+            res.push(copy.splice(idx, 1)[0]);
+        }
+        return res;
+    }
+
+    // 渲染页面（只显示5条）
+    function render() {
+        const available = getAvailable();
+        if (available.length === 0) {
+            localStorage.removeItem(STORAGE_KEY); // 自动重置
+            alert("已用完所有好评，已自动重置！");
+        }
+        const currentList = randomPick(getAvailable(), SHOW_COUNT);
+        const listEl = document.getElementById("praiseList");
+        listEl.innerHTML = "";
+
+        currentList.forEach(text => {
+            const div = document.createElement("div");
+            div.className = "praise-item";
+            div.innerHTML = `<div class="praise-text">${text}</div>`;
+            div.onclick = () => copyAndRemove(text);
+            listEl.appendChild(div);
+        });
+    }
+
+    // 复制并移除这条
+    async function copyAndRemove(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccess();
+        } catch (e) {
+            alert("复制成功：" + text);
+        }
+
+        // 加入已使用，不再出现
+        const used = getUsed();
+        used.push(text);
+        saveUsed(used);
+
+        // 重新渲染（这条消失）
+        render();
+    }
+
+    function showSuccess() {
+        const el = document.getElementById("copySuccess");
+        el.style.opacity = 1;
+        setTimeout(() => el.style.opacity = 0, 1500);
+    }
+
+    // 初始化
+    document.addEventListener("DOMContentLoaded", render);
+</script>
+</body>
+</html>
